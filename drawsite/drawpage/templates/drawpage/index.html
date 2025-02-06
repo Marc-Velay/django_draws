@@ -1,0 +1,142 @@
+<html>
+    <script type="text/javascript">
+    var canvas, ctx, flag = false,
+        prevX = 0,
+        currX = 0,
+        prevY = 0,
+        currY = 0,
+        dot_flag = false;
+
+    var left_x = 0,
+        right_x = 0, 
+        top_y = 0, 
+        bottom_y = 0;
+
+    var chunk_size = ~~(420/28);
+
+    var x = "black",
+        y = 2;
+    
+    function init() {
+        canvas = document.getElementById('can');
+        ctx = canvas.getContext("2d");
+        w = canvas.width;
+        h = canvas.height;
+    
+        canvas.addEventListener("mousemove", function (e) {
+            findxy('move', e)
+        }, false);
+        canvas.addEventListener("mousedown", function (e) {
+            findxy('down', e)
+        }, false);
+        canvas.addEventListener("mouseup", function (e) {
+            findxy('up', e)
+        }, false);
+        canvas.addEventListener("mouseout", function (e) {
+            findxy('out', e)
+        }, false);
+    }
+    
+    function color(obj) {
+        switch (obj.id) {
+            case "black":
+                x = "black";
+                break;
+            case "white":
+                x = "white";
+                break;
+        }
+        if (x == "white") y = 14;
+        else y = 2;
+    
+    }
+    
+    function draw() {
+        ctx.beginPath();
+        left_x = ~~(currX/ chunk_size)*chunk_size;
+        top_y = ~~(currY/ chunk_size)*chunk_size;
+        
+        ctx.fillStyle = x;
+        // ctx.fill();
+        ctx.fillRect(left_x, top_y, chunk_size, chunk_size);
+        ctx.closePath();
+    }
+    
+    function erase() {
+        ctx.clearRect(0, 0, w, h);
+        // document.getElementById("canvasimg").style.display = "none";
+    }
+    
+    async function save() {
+        document.getElementById("canvasimg").style.border = "2px solid";
+        var dataURL = canvas.toDataURL("image/png");
+        document.getElementById("canvasimg").src = dataURL;
+        document.getElementById("canvasimg").style.display = "inline";
+        response = await fetch("{% url 'api:classify' %}", {
+            method: "POST",
+            body: JSON.stringify({
+                img: dataURL
+            }),
+            headers: {
+                "X-CSRFToken": '{{ csrf_token }}',
+                "Content-type": "application/json; charset=UTF-8",
+                'Accept': 'application/json, text/plain, */*',
+            }
+        })
+        .then((response) => response.json())
+        .then((json) => {
+            displayClass(json);
+        });
+    }
+
+    async function displayClass(JSONreturns) {
+        const returnJson = await JSONreturns;
+        console.log(returnJson);
+        console.log(returnJson.number_class);
+        document.getElementById("classify_result").style.display = "inline";
+        document.getElementById("classify_result").innerHTML = "The number is: " + returnJson.number_class;
+
+    }
+    
+    function findxy(res, e) {
+        if (res == 'down') {
+            prevX = currX;
+            prevY = currY;
+            currX = e.clientX - canvas.offsetLeft;
+            currY = e.clientY - canvas.offsetTop;
+
+            flag = true;
+            dot_flag = true;
+            if (dot_flag) {
+                ctx.beginPath();
+                ctx.fillStyle = x;
+                left_x = ~~(currX/ chunk_size)*chunk_size;
+                top_y = ~~(currY/ chunk_size)*chunk_size;
+                ctx.fillRect(left_x, top_y, chunk_size, chunk_size);
+                ctx.closePath();
+                dot_flag = false;
+            }
+        }
+        if (res == 'up' || res == "out") {
+            flag = false;
+        }
+        if (res == 'move') {
+            if (flag) {
+                prevX = currX;
+                prevY = currY;
+                currX = e.clientX - canvas.offsetLeft;
+                currY = e.clientY - canvas.offsetTop;
+                draw();
+            }
+        }
+    }
+    </script>
+    {% csrf_token %}
+    <body onload="init()">
+        <canvas id="can" width="420" height="420" style="position:absolute;top:10%;left:10%;border:2px solid;"></canvas>
+        <img id="canvasimg" style="position:absolute;top:10%;left:52%;" style="display:none;">
+        <div id="classify_result" style="position:absolute;top:55%;left:10%;" style="display: none;"></div>
+        <input type="button" value="classify" id="btn" size="30" onclick="save()" style="position:absolute;top:60%;left:10%;">
+        <input type="button" value="clear" id="clr" size="23" onclick="erase()" style="position:absolute;top:60%;left:15%;">
+    </body>
+    </html>
