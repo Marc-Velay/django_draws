@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,12 +22,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-$6!@rkrkb5t4yqhi3y1z&0zm)56l1t)t^y6$1v87tl*&p(-g0y'
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+#DEBUG = True
+#ALLOWED_HOSTS = []
 
-ALLOWED_HOSTS = []
-
+# The secret key
+#SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+ 
+DEBUG = bool(os.environ.get("DEBUG", default=0))
+ 
+ALLOWED_HOSTS = ['*'] #os.environ.get("DJANGO_ALLOWED_HOSTS","127.0.0.1").split(",")
 
 # Application definition
 
@@ -75,12 +80,23 @@ WSGI_APPLICATION = 'drawnumbers.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
+        'ENGINE': 'django.db.backends.{}'.format(
+             os.getenv('DATABASE_ENGINE', 'sqlite3')
+         ),
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
 
 
 # Password validation

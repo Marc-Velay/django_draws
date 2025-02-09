@@ -43,6 +43,7 @@ if use_cuda:
     device = torch.device("cuda")
 else:
     device = torch.device("cpu")
+
 model = None
 dir_path = os.path.dirname(os.path.realpath(__file__))
 model_path = os.path.join(dir_path,"./models/mnist_cnn.pt")
@@ -52,7 +53,7 @@ model_input_size = 28, 28
 def load_model():
     global model
     model = Net().to(device)
-    model.load_state_dict(torch.load(model_path, weights_only=True))
+    model.load_state_dict(torch.load(model_path, weights_only=True, map_location=device))
     model.eval()
 
 def get_data():
